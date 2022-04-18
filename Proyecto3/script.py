@@ -114,6 +114,56 @@ def fill_query_data_with_com(combination, query_data):
     return query_data
 
 
+"""
+query_data = {'Rain': 'light', 'Maintenance': 'no', 'Appointment': 'attend', 'Train': 'on time'}
+data = 
+    {   'Appointment': {'Train': ['on time', 'delayed'],
+                        'attend': [0.9, 0.6],
+                        'miss': [0.1, 0.4]},
+        'Maintenance': {'Rain': ['none', 'light', 'heavy'],
+                        'no': [0.6, 0.8, 0.9],
+                        'yes': [0.4, 0.2, 0.1]},
+        'Rain':        {'heavy': [0.1], 'light': [0.2], 'none': [0.7]},
+        'Train':       {'Maintenance': ['yes', 'no', 'yes', 'no', 'yes', 'no'],
+                        'Rain': ['none', 'none', 'light', 'light', 'heavy', 'heavy'],
+                        'delayed': [0.2, 0.1, 0.4, 0.3, 0.6, 0.5],
+                        'on time': [0.8, 0.9, 0.6, 0.7, 0.4, 0.5]}
+    }
+data_names = [Rain, Appointment, Train, Main]
+"""
+
+
+def find_probability(data, query_data, data_names):
+    for var in data_names:
+        print("---------", var, "-----------------")
+        dep = find_dependencies_of_var(data[var], data_names)
+        if len(dep) == 0:
+            option = query_data[var]
+            print(data[var][option])
+        else:
+            find_index(data[var], dep, query_data)
+
+
+def find_index(data, dependencies, query_data):
+    print("--------------index---------------")
+    pprint.pprint(query_data)
+    pprint.pprint(data)
+    aux = []
+    for dep in dependencies:
+        aux.append(query_data[dep])
+    print(aux)
+    for i in range(len(data[dep])):
+        print(i, end="")
+
+
+def find_dependencies_of_var(data, data_names):
+    dependencies = []
+    for k, v in data.items():
+        if k in data_names:
+            dependencies.append(k)
+    return dependencies
+
+
 def __main__():
     data_names, data = get_data("./Datos-IA-3.xlsx")
     query = get_query("./query.json")
@@ -128,6 +178,9 @@ def __main__():
         for combination in unknown_com:
             query_data = fill_query_data_with_com(combination, query_data)
             print(query_data)
+            find_probability(data, query_data, data_names)
+            break
+        break
 
 
 __main__()
