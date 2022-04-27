@@ -1,0 +1,13 @@
+{
+    "query_var": "Appointment",
+    "query_data": {
+        "Rain": "?",
+        "Maintenance": "no",
+        "Appointment": "?",
+        "Train": "?"
+    },
+    "unknown_var": [
+        "Rain",
+        "Train"
+    ]
+}

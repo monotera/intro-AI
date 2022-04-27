@@ -237,14 +237,9 @@ def print_query(data, query, data_names):
     print(" = ", end=" ")
 
 
-"""
-TODO: Si no hay variables desconocidas
-"""
-
-
 def __main__():
     data_names, data = get_data("./Datos-IA-3.xlsx")
-    query = get_query("./query.json")
+    query = get_query("./test.json")
     query_var_data = data[query["query_var"]]
     query_var_options = get_var_options(query_var_data, data_names)
     query_data = query["query_data"]
@@ -256,11 +251,16 @@ def __main__():
         print(formulas[i])
         query_data[query["query_var"]] = query_var_options[i]
         final_prob = 0
-        for combination in unknown_com:
-            query_data = fill_query_data_with_com(combination, query_data)
+        if len(unknown_com) == 0:
             local_prob = find_probability(data, query_data, data_names)
             print(local_prob)
             final_prob += local_prob
+        else:
+            for combination in unknown_com:
+                query_data = fill_query_data_with_com(combination, query_data)
+                local_prob = find_probability(data, query_data, data_names)
+                print(local_prob)
+                final_prob += local_prob
         probs.append(final_prob)
         print("Result = ", final_prob)
     print(probs)
