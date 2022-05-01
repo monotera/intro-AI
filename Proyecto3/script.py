@@ -5,11 +5,6 @@ import json
 import itertools
 
 
-def get_sheetnames_xlsx(filepath):
-    wb = load_workbook(filepath, read_only=True, keep_links=False)
-    return wb.sheetnames
-
-
 def get_data(filepath):
     # Obtains sheet names from excel
     sheetnames = get_sheetnames_xlsx(filepath)
@@ -43,8 +38,34 @@ def get_data(filepath):
     return sheetnames, prob_data
 
 
+def get_sheetnames_xlsx(filepath):
+    wb = load_workbook(filepath, read_only=True, keep_links=False)
+    return wb.sheetnames
+
+
 """
-the syntaxis of the query should be:
+the syntaxis of the query basic should be:
+query_var   = The variable for which you want to calculate the probability distribution
+query_data  = one or more observed variables for an event e
+json example:
+{
+    "query_var": "Appointment",
+    "query_data": {
+        "Rain": "light",
+        "Maintenance": "no",
+    }
+}
+"""
+
+
+def get_basic_query(filepath):
+    with open(filepath) as json_file:
+        query = json.load(json_file)
+    return query
+
+
+"""
+Completes the query with the unknown variables and the format needen for the script
 query_var   = The variable for which you want to calculate the probability distribution
 query_data  = one or more observed variables for an event e, if not known then the event is "?"
 unknown_var = variables that are not the query and have not been observed
@@ -54,18 +75,45 @@ json example:
     "query_data": {
         "Rain": "light",
         "Maintenance": "no",
-        "Appointment": "?",
-        "Train": "?"
-    },
-    "unknown_var": ["Train"]
+        "Train": "?",
+        "Appointment": "?"
+    }
+    unknown_var : ["Train]
 }
 """
 
 
-def get_query(filepath):
-    with open(filepath) as json_file:
-        query = json.load(json_file)
+def build_complete_query(data, query, data_names):
+    query_data = query["query_data"]
+    query_data[query["query_var"]] = "?"
+    unknown_var = []
+    vars_needed = get_var_needed(query, data_names, data)
+    for var_needed in vars_needed:
+        if var_needed not in query_data:
+            query_data[var_needed] = "?"
+            unknown_var.append(var_needed)
+    query["unknown_var"] = unknown_var
     return query
+
+
+"""
+obtains the variables needed for resolving the probability of 
+the variable for which you want to calculate the probability distribution
+example: for Train it would be [Train,Rain,Maintenance]
+"""
+
+
+def get_var_needed(query, data_names, data):
+    vars_needed = []
+    dependencies = [query["query_var"]]
+    while len(dependencies) > 0:
+        aux = dependencies[0]
+        del dependencies[0]
+        if aux not in vars_needed:
+            vars_needed.append(aux)
+        dependencies += find_dependencies_of_var(data[aux], data_names)
+
+    return vars_needed
 
 
 """
@@ -100,6 +148,19 @@ def get_combinations_unknown_vars(unknown_vars, data_names, data):
         unknown_vars_options.append(var_options)
     combinations = list(itertools.product(*unknown_vars_options))
     return combinations
+
+
+def get_formulas(query, query_var_options):
+    formulas = []
+    for option in query_var_options:
+        formula = "P(" + query["query_var"]+":" + option + " | "
+        for k, v in query["query_data"].items():
+            if v != "?" and v:
+                formula += k + ":" + v + " ^ "
+        formula = formula[:-2]
+        formula += ") = "
+        formulas.append(formula)
+    return formulas
 
 
 """
@@ -149,15 +210,17 @@ def find_probability(data, query_data, data_names):
     local_prob = 0
     print_query(data, query_data, data_names)
     for query_var in data_names:
-        dependencies = find_dependencies_of_var(data[query_var], data_names)
-        option = query_data[query_var]
-        probs = data[query_var][option]
-        if len(dependencies) == 0:
-            local_prob = probs[0]
-        else:
-            index = find_index(data[query_var], dependencies, query_data)
-            local_prob = probs[index]
-        final_prob *= local_prob
+        if query_var in query_data:
+            dependencies = find_dependencies_of_var(
+                data[query_var], data_names)
+            option = query_data[query_var]
+            probs = data[query_var][option]
+            if len(dependencies) == 0:
+                local_prob = probs[0]
+            else:
+                index = find_index(data[query_var], dependencies, query_data)
+                local_prob = probs[index]
+            final_prob *= local_prob
 
     return final_prob
 
@@ -211,27 +274,15 @@ def find_dependencies_of_var(data, data_names):
     return dependencies
 
 
-def get_formulas(query, query_var_options):
-    formulas = []
-    for option in query_var_options:
-        formula = "P(" + option + " | "
-        for k, v in query["query_data"].items():
-            if v != "?" and v not in query_var_options:
-                formula += v + " ^ "
-        formula = formula[:-2]
-        formula += ") = "
-        formulas.append(formula)
-    return formulas
-
-
 def print_query(data, query, data_names):
     for query_var in query:
-        prefix = "P(" + query[query_var]
+        prefix = "P(" + query_var+":"+query[query_var]
         deps = find_dependencies_of_var(data[query_var], data_names)
         if len(deps) == 0:
             print(prefix+")", end=" ")
         else:
-            sufix = " | " + "".join([query[var] + " ^ " for var in deps])
+            sufix = " | " + \
+                "".join([var+":"+query[var] + " ^ " for var in deps])
             sufix = sufix[:-2] + ")"
             print(prefix + sufix, end=" ")
     print(" = ", end=" ")
@@ -239,7 +290,9 @@ def print_query(data, query, data_names):
 
 def __main__():
     data_names, data = get_data("./Datos-IA-3.xlsx")
-    query = get_query("./test.json")
+    query = get_basic_query("./testTrain.json")
+    query = build_complete_query(data, query, data_names)
+
     query_var_data = data[query["query_var"]]
     query_var_options = get_var_options(query_var_data, data_names)
     query_data = query["query_data"]

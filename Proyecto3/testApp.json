@@ -1,0 +1,7 @@
+{
+    "query_var": "Appointment",
+    "query_data": {
+        "Rain": "light",
+        "Maintenance": "no"
+    }
+}
