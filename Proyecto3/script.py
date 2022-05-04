@@ -289,8 +289,8 @@ def print_query(data, query, data_names):
 
 
 def __main__():
-    data_names, data = get_data("./Datos-IA-3.xlsx")
-    query = get_basic_query("./testTrain.json")
+    data_names, data = get_data("./universidad.xlsx")
+    query = get_basic_query("./testApti.json")
     query = build_complete_query(data, query, data_names)
 
     query_var_data = data[query["query_var"]]

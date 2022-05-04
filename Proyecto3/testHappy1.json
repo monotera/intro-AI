@@ -1,0 +1,8 @@
+{
+    "query_var": "Happy",
+    "query_data": {
+        "Party": "yes",
+        "Smart": "yes",
+        "Creative": "no"
+    }
+}

@@ -1,0 +1,8 @@
+{
+    "query_var": "Happy",
+    "query_data": {
+        "Party": "no",
+        "HW": "yes",
+        "Project": "yes"
+    }
+}
