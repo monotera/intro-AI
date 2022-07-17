@@ -288,16 +288,57 @@ def print_query(data, query, data_names):
     print(" = ", end=" ")
 
 
+def transform_into_prob(probs, query_var_options):
+    suma = sum(probs)
+    alpha = 1/suma
+    transform_probs = {}
+    for i in range(len(probs)):
+        transform_probs[query_var_options[i]] = probs[i]*alpha
+    return transform_probs
+
+
 def __main__():
-    data_names, data = get_data("./universidad.xlsx")
-    query = get_basic_query("./testApti.json")
+    options_excel = {
+        "clase": "./Datos-IA-3.xlsx",
+        "Ejercicio1": "./universidad.xlsx",
+        "Ejercicio2": "./felicidad.xlsx"
+    }
+    pprint.pprint(options_excel)
+    excel_opc = input("Porfavor escriba una opcion (ej : Ejercicio1) : ")
+    excel_filepath = options_excel[excel_opc]
+    print(excel_filepath)
+
+    options_json = {
+        "clase": {
+            "query1": "./testApp.json"
+        },
+        "Ejercicio1": {
+            "query1": "./testUni1.json",
+            "query2": "./testUni2.json"
+        },
+        "Ejercicio2": {
+            "query1": "./testHappy1.json",
+            "query2": "./testHappy2.json"
+        }
+    }
+    pprint.pprint(options_json[excel_opc])
+    json_opc = input("Porfavor escriba una opcion (ej : query1) : ")
+    query_filepath = options_json[excel_opc][json_opc]
+
+    # Obtener datos
+    data_names, data = get_data(excel_filepath)
+    query = get_basic_query(query_filepath)
     query = build_complete_query(data, query, data_names)
 
+    # Obtener informacion var objetivo
     query_var_data = data[query["query_var"]]
     query_var_options = get_var_options(query_var_data, data_names)
     query_data = query["query_data"]
+
+    # Obtener combinacion de variables desconocidas
     unknown_com = get_combinations_unknown_vars(
         query["unknown_var"], data_names, data)
+
     formulas = get_formulas(query, query_var_options)
     probs = []
     for i in range(len(query_var_options)):
@@ -317,6 +358,8 @@ def __main__():
         probs.append(final_prob)
         print("Result = ", final_prob)
     print(probs)
+    print("Probabilidades:")
+    print(transform_into_prob(probs, query_var_options))
 
 
 __main__()
